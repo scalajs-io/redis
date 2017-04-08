@@ -22,7 +22,7 @@ package object redis {
 
   type RedisResponse = js.Object
 
-  type RedisTime = Double
+  type RedisTime = String
 
   type RedisTLS = js.Object
 

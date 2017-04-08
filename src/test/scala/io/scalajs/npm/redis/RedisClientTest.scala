@@ -2,9 +2,12 @@ package io.scalajs.npm.redis
 
 import io.scalajs.JSON
 import io.scalajs.nodejs.buffer.Buffer
+import io.scalajs.nodejs.setTimeout
+import io.scalajs.util.DurationHelper._
 import io.scalajs.util.ScalaJsHelper._
 import org.scalatest.FunSpec
 
+import scala.concurrent.duration._
 import scala.scalajs.js
 
 /**
@@ -14,9 +17,21 @@ import scala.scalajs.js
 class RedisClientTest extends FunSpec {
 
   describe("RedisClient") {
+    val client = Redis.createClient(new RedisClientOptions(detect_buffers = true))
+    setTimeout(() => client.quit(), 5.seconds)
+
+    it("supports monitoring") {
+      client.monitor((err, res) => {
+        info("Entering monitoring mode.")
+      })
+      client.set("foo", "bar")
+
+      client.onMonitor((time, args, raw_reply) => {
+        info(time + ": " + args) // 1458910076.446514:['set', 'foo', 'bar']
+      })
+    }
 
     it("supports buffers and strings") {
-      val client = Redis.createClient(new RedisClientOptions(detect_buffers = true))
       client.set("foo_rand000000000000", "OK")
 
       // This will return a JavaScript String 
@@ -28,32 +43,47 @@ class RedisClientTest extends FunSpec {
       client.get(Buffer.from("foo_rand000000000000"), (err, reply) => {
         info(reply.toString()) // Will print `<Buffer 4f 4b>` 
       })
-      client.quit()
     }
 
-    it("supports hashes") {
-      val client = Redis.createClient(new RedisClientOptions())
-      client.hmset("hosts", "mjr", "1", "another", "23", "home", "1234")
-      client.hgetall("hosts", (err, obj) => {
+    it("supports creating hashes") {
+      client.hmset("AAPL", js.Array(
+        "Name", "Apple Inc.",
+        "LastSale", "143.34",
+        "MarketCap", "752039043600",
+        "IPOyear", "1980",
+        "Sector", "Technology",
+        "Industry", "Computer Manufacturing"))
+    }
+
+    it("supports retrieving hashes") {
+      client.hgetall("AAPL", (err, obj) => {
         assert(!isDefined(err))
-        info(JSON.stringify(obj)) // { mjr: '1', another: '23', home: '1234' }
+        info(JSON.stringify(obj)) // {"Name":"Apple Inc.","LastSale":"143.34","MarketCap":"752039043600","IPOyear":"1980","Sector":"Technology","Industry":"Computer Manufacturing"}
       })
     }
 
-    it("supports monitoring") {
-      val client = Redis.createClient()
-      client.monitor((err, res) => {
-        info("Entering monitoring mode.")
-      })
-      client.set("foo", "bar")
-
-      client.onMonitor((time, args, raw_reply) => {
-        info(time + ": " + args) // 1458910076.446514:['set', 'foo', 'bar'] 
-      })
+    it("supports existence of a key") {
+      client.exists("AAPL", (err, result) => info(s"exists: AAPL = $result"))
     }
 
+    it("supports existence of an array of keys") {
+      client.exists(js.Array("AAPL", "AMD"), (err, result) => info(s"exists: AAPL+AMD = $result"))
+    }
+
+    it("supports SCAN") {
+      client.scan[js.Any](0, (err, result) => info(s"SCAN1: results = ${JSON.stringify(result)}"))
+    }
+
+    it("supports SCAN with COUN") {
+      client.scan[js.Any](0, "COUNT", 50, (err, result) => info(s"SCAN2: results = ${JSON.stringify(result)}"))
+    }
+
+    it("supports SCAN with COUNT and MATCH") {
+      client.scan[js.Any](0, "COUNT", 50, "MATCH", "A*", (err, result) => info(s"SCAN3: results = ${JSON.stringify(result)}"))
+    }
+
+    /*
     it("supports multi-commands") {
-      val client = Redis.createClient()
       val multi = client.multi()
 
       // start a separate multi command queue
@@ -91,7 +121,7 @@ class RedisClientTest extends FunSpec {
       })
 
       sub.subscribe("a nice channel")
-    }
+    }*/
 
   }
 

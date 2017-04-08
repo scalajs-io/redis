@@ -8,6 +8,7 @@ import io.scalajs.util.PromiseHelper._
 
 import scala.concurrent.Promise
 import scala.scalajs.js
+import scala.scalajs.js.Dictionary
 
 /**
   * Redis Client
@@ -73,6 +74,26 @@ trait RedisClient extends IEventEmitter {
   def batch(commands: js.Array[RedisCommand] = js.native): RedisMulti = js.native
 
   /**
+    * Deletes a key
+    * @param key the given key
+    */
+  def del(key: String): Unit = js.native
+
+  /**
+    * Deletes a record by key
+    * @param key      the given key
+    * @param callback the given callback
+    */
+  def del(key: String, callback: RedisCallback[RedisResponse]): Unit = js.native
+
+  /**
+    * Deletes an array of records by their respective keys
+    * @param keys     the given array of keys
+    * @param callback the given callback
+    */
+  def del(keys: js.Array[String], callback: RedisCallback[RedisResponse] = js.native): Unit = js.native
+
+  /**
     * Duplicate all current options and return a new redisClient instance. All options passed to the duplicate
     * function are going to replace the original option. If you pass a callback, duplicate is going to wait until
     * the client is ready and returns it in the callback. If an error occurs in the meanwhile, that is going to
@@ -84,6 +105,13 @@ trait RedisClient extends IEventEmitter {
   def duplicate(options: RawOptions = js.native, callback: RedisCallback[RedisResponse]): js.Any = js.native
 
   /**
+    * Dumps a record by key
+    * @param key      the given key
+    * @param callback the given callback
+    */
+  def dump(key: String, callback: RedisCallback[RedisResponse] = js.native): Unit = js.native
+
+  /**
     * Forcibly close the connection to the Redis server. Note that this does not wait until all replies have been
     * parsed. If you want to exit cleanly, call client.quit() as mentioned above.
     *
@@ -92,6 +120,20 @@ trait RedisClient extends IEventEmitter {
     * @param flush indicates whether the want a flush to occur before closing the connection
     */
   def end(flush: Boolean = js.native): Unit = js.native
+
+  /**
+    * Indicates whether a key exists
+    * @param key      the given key
+    * @param callback the given callback <Error, Integer>
+    */
+  def exists(key: String, callback: RedisCallback[Int]): js.Any = js.native
+
+  /**
+    * Indicates whether a key exists
+    * @param key      the given key
+    * @param callback the given callback <Error, Integer>
+    */
+  def exists(key: js.Array[String], callback: RedisCallback[Int]): js.Any = js.native
 
   def get(key: Buffer, callback: RedisCallback[Buffer]): Unit = js.native
 
@@ -119,6 +161,10 @@ trait RedisClient extends IEventEmitter {
   def hkeys(key: String, callback: RedisCallback[js.Array[String]]): Unit = js.native
 
   def hmset(key: String, keyValuePairs: String*): Unit = js.native
+
+  def hmset(key: String, keyValuePairs: js.Array[String]): Unit = js.native
+
+  def hmset(key: String, keyValuePairs: js.Array[String], callback: RedisCallback[RedisResponse]): Unit = js.native
 
   def hset(args: js.Array[String], callback: RedisCallback[RedisResponse] = js.native): Unit = js.native
 
@@ -149,6 +195,8 @@ trait RedisClient extends IEventEmitter {
     */
   def quit(): Unit = js.native
 
+  def rename(fromKey: String, toKey: String, callback: RedisCallback[RedisResponse] = js.native): Unit = js.native
+
   /**
     *
     * @param key
@@ -156,6 +204,19 @@ trait RedisClient extends IEventEmitter {
     * @example sadd("bigset", "a member");
     */
   def sadd(key: String, value: String): Unit = js.native
+
+  def scan[T](cursor: Int, callback: RedisCallback[T]): Unit = js.native
+
+  def scan[T](cursor: Int, command0: String, arg0: js.Any, callback: RedisCallback[T]): Unit = js.native
+
+  def scan[T](cursor: Int,
+              command0: String, arg0: js.Any,
+              command1: String, arg1: js.Any, callback: RedisCallback[T]): Unit = js.native
+
+  def scan[T](cursor: Int,
+              command0: String, arg0: js.Any,
+              command1: String, arg1: js.Any,
+              command2: String, arg3: js.Any, callback: RedisCallback[T]): Unit = js.native
 
   /**
     *
@@ -222,7 +283,12 @@ object RedisClient {
     * Redis Client Enrichment
     * @param client the given [[RedisClient Redis client]]
     */
-  final implicit class RedisClientEnrichment(val client: RedisClient) extends AnyVal {
+  final implicit class RedisClientScalaEnrichment(val client: RedisClient) extends AnyVal {
+
+    @inline
+    def hgetallAsync(key: String): Promise[Dictionary[String]] = {
+      promiseWithError1[RedisError, js.Dictionary[String]](client.hgetall(key, _))
+    }
 
     @inline
     def hsetAsync(key: String, dict: js.Dictionary[String]): Promise[RedisResponse] = {
@@ -233,9 +299,33 @@ object RedisClient {
       promiseWithError1[RedisError, RedisResponse](client.hset(args, _))
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //    Events
-    //////////////////////////////////////////////////////////////////////////////
+    @inline
+    def scanAsync[T](cursor: Int): Promise[T] = {
+      promiseWithError1[RedisError, T](client.scan(cursor, _))
+    }
+
+    @inline
+    def scanCountAsync[T](cursor: Int, count: Int): Promise[T] = {
+      promiseWithError1[RedisError, T](client.scan(cursor, "COUNT", count, _))
+    }
+
+    @inline
+    def scanMatchAsync[T](cursor: Int, regex: String): Promise[T] = {
+      promiseWithError1[RedisError, T](client.scan[T](cursor, "MATCH", regex, _))
+    }
+
+    @inline
+    def scanMatchCountAsync[T](cursor: Int, regex: String, count: Int): Promise[T] = {
+      promiseWithError1[RedisError, T](client.scan[T](cursor, "COUNT", count, "MATCH", regex, _))
+    }
+
+  }
+
+  /**
+    * Redis Client Events
+    * @param client the given [[RedisClient Redis client]]
+    */
+  final implicit class RedisClientEvents(val client: RedisClient) extends AnyVal {
 
     /**
       * client will emit connect as soon as the stream is connected to the server.
