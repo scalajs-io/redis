@@ -6,7 +6,7 @@ import io.scalajs.nodejs.events.IEventEmitter
 import io.scalajs.nodejs.fs.ReadStream
 import io.scalajs.util.PromiseHelper._
 
-import scala.concurrent.Promise
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.Dictionary
 
@@ -207,7 +207,8 @@ trait RedisClient extends IEventEmitter {
 
   def scan[T](cursor: Int, callback: RedisCallback[T]): Unit = js.native
 
-  def scan[T](cursor: Int, command0: String, arg0: js.Any, callback: RedisCallback[T]): Unit = js.native
+  def scan[T](cursor: Int,
+              command0: String, arg0: js.Any, callback: RedisCallback[T]): Unit = js.native
 
   def scan[T](cursor: Int,
               command0: String, arg0: js.Any,
@@ -286,12 +287,12 @@ object RedisClient {
   final implicit class RedisClientScalaEnrichment(val client: RedisClient) extends AnyVal {
 
     @inline
-    def hgetallAsync(key: String): Promise[Dictionary[String]] = {
+    def hgetallFuture(key: String): Future[Dictionary[String]] = {
       promiseWithError1[RedisError, js.Dictionary[String]](client.hgetall(key, _))
     }
 
     @inline
-    def hsetAsync(key: String, dict: js.Dictionary[String]): Promise[RedisResponse] = {
+    def hsetFuture(key: String, dict: js.Dictionary[String]): Future[RedisResponse] = {
       val args = dict.foldLeft[js.Array[String]](js.Array(key)) { case (array, (hkey, hval)) =>
         array.push(hkey, hval)
         array
@@ -300,22 +301,22 @@ object RedisClient {
     }
 
     @inline
-    def scanAsync[T](cursor: Int): Promise[T] = {
+    def scanFuture[T](cursor: Int): Future[T] = {
       promiseWithError1[RedisError, T](client.scan(cursor, _))
     }
 
     @inline
-    def scanCountAsync[T](cursor: Int, count: Int): Promise[T] = {
+    def scanCountFuture[T](cursor: Int, count: Int): Future[T] = {
       promiseWithError1[RedisError, T](client.scan(cursor, "COUNT", count, _))
     }
 
     @inline
-    def scanMatchAsync[T](cursor: Int, regex: String): Promise[T] = {
+    def scanMatchFuture[T](cursor: Int, regex: String): Future[T] = {
       promiseWithError1[RedisError, T](client.scan[T](cursor, "MATCH", regex, _))
     }
 
     @inline
-    def scanMatchCountAsync[T](cursor: Int, regex: String, count: Int): Promise[T] = {
+    def scanMatchCountFuture[T](cursor: Int, regex: String, count: Int): Future[T] = {
       promiseWithError1[RedisError, T](client.scan[T](cursor, "COUNT", count, "MATCH", regex, _))
     }
 

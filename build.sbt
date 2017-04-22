@@ -5,8 +5,8 @@ import sbt._
 
 import scala.language.postfixOps
 
-val apiVersion = "0.4.0-pre4"
-val scalaJsIOVersion = "0.4.0-pre4"
+val apiVersion = "0.4.0-pre5"
+val scalaJsIOVersion = "0.4.0-pre5"
 val scalaJsVersion = "2.12.1"
 
 homepage := Some(url("https://github.com/scalajs-io/redis"))

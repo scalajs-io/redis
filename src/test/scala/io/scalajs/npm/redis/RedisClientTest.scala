@@ -71,15 +71,15 @@ class RedisClientTest extends FunSpec {
     }
 
     it("supports SCAN") {
-      client.scan[js.Any](0, (err, result) => info(s"SCAN1: results = ${JSON.stringify(result)}"))
+      client.scan(0, (err: RedisError, result: js.Any) => info(s"SCAN1: results = ${JSON.stringify(result)}"))
     }
 
     it("supports SCAN with COUN") {
-      client.scan[js.Any](0, "COUNT", 50, (err, result) => info(s"SCAN2: results = ${JSON.stringify(result)}"))
+      client.scan(0, "COUNT", 50, (err: RedisError, result: js.Any) => info(s"SCAN2: results = ${JSON.stringify(result)}"))
     }
 
     it("supports SCAN with COUNT and MATCH") {
-      client.scan[js.Any](0, "COUNT", 50, "MATCH", "A*", (err, result) => info(s"SCAN3: results = ${JSON.stringify(result)}"))
+      client.scan(0, "COUNT", 50, "MATCH", "A*", (err: RedisError, result: js.Any) => info(s"SCAN3: results = ${JSON.stringify(result)}"))
     }
 
     /*
