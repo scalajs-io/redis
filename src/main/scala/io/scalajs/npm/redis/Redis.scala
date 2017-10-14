@@ -3,7 +3,7 @@ package io.scalajs.npm.redis
 import io.scalajs.RawOptions
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSImport, ScalaJSDefined}
+import scala.scalajs.js.annotation.JSImport
 import scala.scalajs.js.|
 
 /**
@@ -116,7 +116,7 @@ object Redis extends Redis
   *                                   Return an error to return that specific error to all offline commands.
   * @author lawrence.daniels@gmail.com
   */
-@ScalaJSDefined
+
 class RedisClientOptions(val host: js.UndefOr[String] = js.undefined,
                          val port: js.UndefOr[Int] = js.undefined,
                          val path: js.UndefOr[String] = js.undefined,
